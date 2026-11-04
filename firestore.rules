@@ -31,16 +31,66 @@ service cloud.firestore {
         && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
     }
 
-    // Общий дедлайн можно создать только в уже существующем чате с этим человеком.
+    // Общий дедлайн: в чате с другом (cid) или в группе (gid).
+    // В группе писать (и создавать дедлайны) может только не заглушённый участник.
     match /shared/{x} {
       allow create: if request.auth != null
         && request.auth.uid in request.resource.data.members
-        && exists(/databases/$(database)/documents/chats/$(request.resource.data.cid))
-        && get(/databases/$(database)/documents/chats/$(request.resource.data.cid)).data.members == request.resource.data.members;
+        && (
+          (!('gid' in request.resource.data)
+            && exists(/databases/$(database)/documents/chats/$(request.resource.data.cid))
+            && get(/databases/$(database)/documents/chats/$(request.resource.data.cid)).data.members == request.resource.data.members)
+          ||
+          ('gid' in request.resource.data
+            && exists(/databases/$(database)/documents/groups/$(request.resource.data.gid))
+            && get(/databases/$(database)/documents/groups/$(request.resource.data.gid)).data.members == request.resource.data.members
+            && !(request.auth.uid in get(/databases/$(database)/documents/groups/$(request.resource.data.gid)).data.get('muted', [])))
+        );
       allow update: if request.auth != null
         && request.auth.uid in resource.data.members
         && request.resource.data.members == resource.data.members;
       allow read, delete: if request.auth != null && request.auth.uid in resource.data.members;
+    }
+
+    // Группы. Создатель (owner) может всё: менять название/фото, мутить участников, удалить группу.
+    // Обычный участник может только обновить last (новое сообщение) или выйти из группы.
+    match /groups/{g} {
+      allow create: if request.auth != null
+        && request.resource.data.owner == request.auth.uid
+        && request.auth.uid in request.resource.data.members
+        && request.resource.data.members.size() >= 2
+        && request.resource.data.members.size() <= 50
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40;
+      allow read: if request.auth != null && request.auth.uid in resource.data.members;
+      allow update: if request.auth != null && (
+        (request.auth.uid == resource.data.owner && request.resource.data.owner == resource.data.owner)
+        || (request.auth.uid in resource.data.members && request.resource.data.owner == resource.data.owner && (
+              request.resource.data.diff(resource.data).affectedKeys().hasOnly(['last'])
+              || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+                  && !(request.auth.uid in request.resource.data.members)
+                  && request.resource.data.members.size() == resource.data.members.size() - 1
+                  && request.resource.data.members.hasOnly(resource.data.members))
+        ))
+      );
+      allow delete: if request.auth != null && request.auth.uid == resource.data.owner;
+
+      match /msgs/{m} {
+        allow read: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/groups/$(g)).data.members;
+        allow create: if request.auth != null
+          && request.resource.data.f == request.auth.uid
+          && request.auth.uid in get(/databases/$(database)/documents/groups/$(g)).data.members
+          && !(request.auth.uid in get(/databases/$(database)/documents/groups/$(g)).data.get('muted', []));
+        allow update: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/groups/$(g)).data.members
+          && (resource.data.f == request.auth.uid
+              || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['k', 'dn']));
+        allow delete: if request.auth != null
+          && (resource.data.f == request.auth.uid
+              || request.auth.uid == get(/databases/$(database)/documents/groups/$(g)).data.owner);
+      }
     }
 
     // Чат (дружба) создаётся только если второй человек прислал приглашение.

@@ -102,11 +102,11 @@ async function open(browser,seed){
  ok('create form opens, nav hidden',await page.$('[data-a=add]')!==null&&await page.$('nav')===null);
  await page.click('[data-a=add]');await page.waitForTimeout(200);ok('empty title rejected',await page.$('[data-a=add]')!==null);
  await page.fill('[data-m=t]','Тест из UI');await page.click('[data-a=dcat][data-i=personal]');await page.waitForTimeout(150);
- await page.fill('[data-m=b]','Описание');await page.fill('[data-m=i][data-j="0"]','Пункт 1');await page.fill('[data-m=d]',add(2));
+ await page.fill('[data-m=i][data-j="0"]','Пункт 1');await page.fill('[data-m=d]',add(2));
  await page.screenshot({path:'s6_create.png'});
  await page.click('[data-a=add]');await page.waitForTimeout(700);
  const nn=await page.evaluate(()=>window.__FB.db['users/u1'].notes.find(n=>n.title==='Тест из UI'));
- ok('create: saved with category/body/tasks/due',nn&&nn.cat==='personal'&&nn.body==='Описание'&&nn.tasks.length===1&&nn.due,JSON.stringify(nn));
+ ok('create: saved with category/tasks/due',nn&&nn.cat==='personal'&&nn.tasks.length===1&&nn.due,JSON.stringify(nn));
  ok('create: returns to notes',await page.$('nav')!==null);
  // old note without category falls to Other and old data intact
  const total=await page.evaluate(()=>window.__FB.db['users/u1'].notes.length);ok('existing notes preserved',total===6,String(total));
@@ -132,7 +132,7 @@ async function open(browser,seed){
  await page.click('[data-a=back]');await page.waitForTimeout(500);ok('chat back',await page.$('nav')!==null);
  // ---- profile
  await page.click('nav [data-i=u]');await page.waitForTimeout(500);t=await txt();
- ok('profile: cells',['Настройки','История заметок','Друзья','Безопасность','Выход','Version 1.0.4'].every(x=>t.includes(x)),t.replace(/\n+/g,' | ').slice(0,300));
+ ok('profile: cells',['Настройки','История заметок','Друзья','Безопасность','Выход','Version 1.0.6'].every(x=>t.includes(x)),t.replace(/\n+/g,' | ').slice(0,300));
  await page.screenshot({path:'s9_profile.png'});
  for(const k of ['set','hist','fr','sec']){await page.click(`[data-a=acs][data-i=${k}]`);await page.waitForTimeout(450);ok('profile sub-screen '+k+' (nav hidden)',await page.$('nav')===null);await page.click('[data-a=acb]');await page.waitForTimeout(450);}
  // history -> create

@@ -14,14 +14,15 @@ public class WidgetBridgePlugin extends Plugin {
         PmData.save(getContext(),
             call.getString("chats", "[]"),
             call.getString("notes", "[]"),
-            call.getString("dls", "[]"));
+            call.getString("dls", "[]"),
+            call.getString("prog", "{}"));
         call.resolve();
     }
 
     @PluginMethod
     public void getPending(PluginCall call) {
         JSObject r = new JSObject();
-        r.put("ops", "[]");
+        r.put("ops", PmData.takeOps(getContext()));
         call.resolve(r);
     }
 }

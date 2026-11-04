@@ -2,7 +2,6 @@ package com.pastmetki.app;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -37,13 +36,21 @@ public class NotesService extends RemoteViewsService {
             RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_item_note);
             JSONObject o = a.optJSONObject(p);
             if (o == null) return v;
+            boolean done = o.optInt("d") == 1;
             v.setTextViewText(R.id.t, o.optString("t"));
+            v.setTextColor(R.id.t, done ? 0xFF777788 : 0xFFFFFFFF);
             String s = o.optString("s");
             v.setTextViewText(R.id.s, s);
             v.setViewVisibility(R.id.s, s.length() > 0 ? View.VISIBLE : View.GONE);
-            Intent f = new Intent();
-            f.setData(Uri.parse("pastmetki://note/" + o.optLong("i")));
-            v.setOnClickFillInIntent(R.id.row, f);
+            v.setTextViewText(R.id.ck, done ? "☑" : "☐");
+            v.setTextColor(R.id.ck, done ? 0xFFFFC400 : 0xFFA6A6B8);
+            long id = o.optLong("i");
+            Intent open = new Intent();
+            open.setData(Uri.parse("pastmetki://note/" + id));
+            v.setOnClickFillInIntent(R.id.body, open);
+            Intent tg = new Intent();
+            tg.setData(Uri.parse("pastmetki://toggle/" + id));
+            v.setOnClickFillInIntent(R.id.ck, tg);
             return v;
         }
 
