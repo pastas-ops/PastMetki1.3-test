@@ -12,7 +12,7 @@ public class QuickWidget extends AppWidgetProvider {
             RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_quick);
             PmData.applyBg(c, v, id);
             v.setOnClickPendingIntent(R.id.qn, PmData.link(c, "new/note", 41));
-            v.setOnClickPendingIntent(R.id.qt, PmData.link(c, "new/task", 42));
+            v.setOnClickPendingIntent(R.id.qt, PmData.link(c, "chats", 42));
             v.setOnClickPendingIntent(R.id.qc, PmData.link(c, "calendar", 43));
             m.updateAppWidget(id, v);
         }

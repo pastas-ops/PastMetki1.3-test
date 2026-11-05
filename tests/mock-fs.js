@@ -12,6 +12,7 @@ export const onSnapshot=(r,cb)=>{const f=()=>{if(r.doc){const v=st.db[r.path];cb
 export const getDoc=async r=>{const v=st.db[r.path];return{exists:()=>v!==undefined,data:()=>v,id:r.id}};
 export const getDocs=async q=>{const d=run(q.cons?q:{col:q,cons:[]});return{docs:d,empty:!d.length,forEach:f=>d.forEach(f)}};
 export const setDoc=async(r,v,o)=>{st.db[r.path]=o&&o.merge?{...(st.db[r.path]||{}),...v}:v;emit()};
-export const updateDoc=async(r,v)=>{st.db[r.path]={...(st.db[r.path]||{}),...v};emit()};
+export const arrayUnion=(...v)=>({__au:v});
+export const updateDoc=async(r,v)=>{const o={...(st.db[r.path]||{})};for(const k in v){const x=v[k];if(x&&x.__au)o[k]=[...new Set([...(o[k]||[]),...x.__au])];else o[k]=x}st.db[r.path]=o;emit()};
 export const deleteDoc=async r=>{delete st.db[r.path];emit()};
 export const writeBatch=()=>{const ops=[];return{set:(r,v,o)=>ops.push(()=>setDoc(r,v,o)),update:(r,v)=>ops.push(()=>updateDoc(r,v)),delete:r=>ops.push(()=>deleteDoc(r)),commit:async()=>{for(const f of ops)await f()}}};

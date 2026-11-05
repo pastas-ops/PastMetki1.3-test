@@ -39,7 +39,7 @@
             android:layout_weight="1"
             android:background="@drawable/pm_btn_b"
             android:gravity="center"
-            android:text="✓ Задача"
+            android:text="💬 Чаты"
             android:textColor="#FFFFFF"
             android:textSize="13sp"
             android:textStyle="bold" />

@@ -26,7 +26,7 @@ const seed=(a)=>{const now=Date.now(),D=864e5;
 };
 async function mk(browser){const ctx=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true});const p=await ctx.newPage();const e=[];
  p.on('pageerror',x=>e.push('pageerror: '+x.message));p.on('console',m=>{if(m.type()==='error')e.push('console: '+m.text())});
- await p.route('**/*',r=>{const u=r.request().url();if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});if(u.includes('fonts.googleapis'))return r.fulfill({contentType:'text/css',body:''});if(u==='http://pm.test/')return r.fulfill({contentType:'text/html',body:html});return r.abort()});
+ await p.route('**/*',r=>{const u=r.request().url();if(/manifest\.webmanifest|sw\.js|icon-\d+\.png/.test(u))return r.fulfill({status:200,contentType:'text/plain',body:''});if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});if(u.includes('fonts.googleapis'))return r.fulfill({contentType:'text/css',body:''});if(u==='http://pm.test/')return r.fulfill({contentType:'text/html',body:html});return r.abort()});
  await p.addInitScript(seed,{today:add(0),d3:add(3),dm:add(-2)});await p.goto('http://pm.test/');await p.waitForTimeout(600);return{p,e,ctx}}
 (async()=>{
  const browser=await chromium.launch();const {p:page,e:errs}=await mk(browser);
@@ -127,35 +127,28 @@ async function mk(browser){const ctx=await browser.newContext({viewport:{width:3
  ok('group: name kept after picking members',(await page.inputValue('dialog [data-m=gn]'))==='Команда');
  await page.click('dialog [data-a=gmk]');await page.waitForTimeout(900);
  const gk=await page.evaluate(()=>Object.keys(window.__FB.db).find(k=>/^groups\/[^/]+$/.test(k)));const g=await db(gk);
- ok('group created with owner and members',g&&g.owner==='u1'&&g.members.length===3&&g.name==='Команда',JSON.stringify(g));
- ok('group chat opened with title and member count',(await page.innerText('header')).includes('Команда')&&(await page.innerText('header')).includes('3 участника'));
+ ok('group created: only owner is a member until invites are accepted',g&&g.owner==='u1'&&g.members.length===1&&g.name==='Команда',JSON.stringify(g));
+ ok('group chat opened with title and member count',(await page.innerText('header')).includes('Команда')&&(await page.innerText('header')).includes('1 участник'));
+ ok('invitations created for both friends',await page.evaluate(()=>Object.keys(window.__FB.db).filter(k=>k.startsWith('ginv/')).length)===2);
  await page.fill('[data-m=ct]','Привет, группа');await page.fill('[data-m=cdt]',add(4));await page.click('[data-a=send]');await page.waitForTimeout(500);
  const gid=gk.split('/')[1];
  const gm=await page.evaluate(id=>Object.entries(window.__FB.db).filter(([k,v])=>k.startsWith('groups/'+id+'/msgs/')).map(x=>x[1]),gid);
  ok('group message stored in group',gm.length===1&&gm[0].x==='Привет, группа');
  const sh=await page.evaluate(()=>Object.values(window.__FB.db).find(v=>v&&v.x==='Привет, группа'&&v.gid));
- ok('group deadline shared with group name, no logins',sh&&sh.gn==='Команда'&&sh.members.length===3,JSON.stringify(sh));
+ ok('group deadline shared with group name, no logins',sh&&sh.gn==='Команда'&&sh.members.length===1,JSON.stringify(sh));
  await page.click('nav',{trial:true}).catch(()=>{});
  await page.click('[data-a=back]');await page.waitForTimeout(500);
- t=await txt();ok('chat list shows group',t.includes('Команда')&&t.includes('3 участника'));
+ t=await txt();ok('chat list shows group',t.includes('Команда')&&t.includes('1 участник'));
  await page.click('nav [data-i=c]');await page.waitForTimeout(450);t=await txt();
  ok('calendar shows group name as creator',t.includes('Привет, группа')&&t.includes('👥 Команда')&&!t.includes('@boris'),t.slice(0,300));
  await page.click('nav [data-i=s]');await page.waitForTimeout(400);
  await page.click('[data-a=chat][data-i^=g_]');await page.waitForTimeout(600);
  await page.click('header [data-a=ginfo] >> nth=0');await page.waitForTimeout(300);
- ok('group info: members, owner crown, mute buttons',(await page.innerText('dialog')).includes('👑')&&(await page.$$('dialog [data-a=gmute]')).length===2);
- await page.click('dialog [data-a=gmute][data-w=u2]');await page.waitForTimeout(500);
- ok('mute saved by owner',(await db(gk)).muted.includes('u2'));
- ok('muted member shown as muted',(await page.innerText('dialog')).includes('Размутить'));
+ ok('group info: owner crown, pending invites listed',(await page.innerText('dialog')).includes('👑')&&(await page.innerText('dialog')).includes('Ожидают ответа'));
  await page.click('dialog [data-a=fx]');await page.waitForTimeout(200);
  // long-press on header avatar opens info
  await page.click('header [data-lt=g]',{delay:700});await page.waitForTimeout(900);ok('long-press on group avatar opens info',await page.$('dialog[open] [data-a=gdel]')!==null);
  await page.click('dialog [data-a=fx]');
- // non-owner muted -> composer disabled
- await page.evaluate(()=>{window.__FB.db['groups/'+Object.keys(window.__FB.db).find(k=>/^groups\/[^/]+$/.test(k)).split('/')[1]].owner='u2'});
- await page.evaluate(()=>{const k=Object.keys(window.__FB.db).find(k=>/^groups\/[^/]+$/.test(k));window.__FB.db[k].muted=['u1'];window.__FB.db[k]={...window.__FB.db[k]}});
- await page.evaluate(()=>document.dispatchEvent(new Event('x')));
- await page.click('[data-a=back]').catch(()=>{});await page.waitForTimeout(200);
  // widget payload carries progress + done flag
  await page.waitForTimeout(1500);
  const last=await page.evaluate(()=>window.__CAP.sent[window.__CAP.sent.length-1]);

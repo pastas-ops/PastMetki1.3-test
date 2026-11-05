@@ -9,7 +9,7 @@ async function open(browser,seed){
   const page=await ctx.newPage();const errs=[];
   page.on('pageerror',e=>errs.push('pageerror: '+e.message));
   page.on('console',m=>{if(m.type()==='error')errs.push('console: '+m.text())});
-  await page.route('**/*',r=>{const u=r.request().url();
+  await page.route('**/*',r=>{const u=r.request().url();if(/manifest\.webmanifest|sw\.js|icon-\d+\.png/.test(u))return r.fulfill({status:200,contentType:'text/plain',body:''});
     if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});
     if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});
     if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});
@@ -132,7 +132,7 @@ async function open(browser,seed){
  await page.click('[data-a=back]');await page.waitForTimeout(500);ok('chat back',await page.$('nav')!==null);
  // ---- profile
  await page.click('nav [data-i=u]');await page.waitForTimeout(500);t=await txt();
- ok('profile: cells',['Настройки','История заметок','Друзья','Безопасность','Выход','Version 1.0.6'].every(x=>t.includes(x)),t.replace(/\n+/g,' | ').slice(0,300));
+ ok('profile: cells',['Настройки','История заметок','Друзья','Безопасность','Выход','Version 1.0.7'].every(x=>t.includes(x)),t.replace(/\n+/g,' | ').slice(0,300));
  await page.screenshot({path:'s9_profile.png'});
  for(const k of ['set','hist','fr','sec']){await page.click(`[data-a=acs][data-i=${k}]`);await page.waitForTimeout(450);ok('profile sub-screen '+k+' (nav hidden)',await page.$('nav')===null);await page.click('[data-a=acb]');await page.waitForTimeout(450);}
  // history -> create
@@ -148,7 +148,7 @@ async function open(browser,seed){
  await page.evaluate(i=>window.__CAP.handlers.appUrlOpen({url:'pastmetki://note/'+i}),nid);await page.waitForTimeout(700);
  ok('deep link note/<id> opens note',(await txt()).includes('Дедлайн')||await page.$('[data-a=nback]')!==null);
  await page.evaluate(()=>window.__CAP.handlers.appUrlOpen({url:'pastmetki://new/task'}));await page.waitForTimeout(700);
- ok('deep link new/task opens form (date today)',(await page.inputValue('[data-m=d]'))===add(0)&&(await txt()).includes('Новая задача'));
+ ok('deep link new/task opens form (date today)',(await page.inputValue('[data-m=d]'))===add(0)&&(await txt()).includes('Новая заметка'));
  await page.evaluate(()=>window.__CAP.handlers.appUrlOpen({url:'pastmetki://calendar'}));await page.waitForTimeout(700);
  ok('deep link calendar',(await txt()).includes('Добавить событие'));
  await page.evaluate(()=>window.__CAP.handlers.appUrlOpen({url:'pastmetki://chat/u2'}));await page.waitForTimeout(800);

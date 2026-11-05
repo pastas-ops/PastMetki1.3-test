@@ -37,9 +37,9 @@
             android:layout_height="match_parent"
             android:layout_margin="3dp"
             android:layout_weight="1"
-            android:background="@drawable/pm_btn_b"
+            android:background="@drawable/pm_btn_p"
             android:gravity="center"
-            android:text="✓ Задача"
+            android:text="📅 Календарь"
             android:textColor="#FFFFFF"
             android:textSize="12sp"
             android:textStyle="bold" />
