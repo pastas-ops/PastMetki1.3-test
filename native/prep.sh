@@ -13,8 +13,8 @@ echo "Иконка PastMetki установлена"
 npx cap sync android
 mkdir -p ~/.android && cp debug.keystore ~/.android/debug.keystore
 sed -i "s/versionCode 1/versionCode ${GITHUB_RUN_NUMBER:-1}/" android/app/build.gradle
-sed -i 's/versionName "1.0"/versionName "1.0.8"/' android/app/build.gradle
-grep -q 'versionName "1.0.8"' android/app/build.gradle
+sed -i 's/versionName "1.0"/versionName "1.0.9"/' android/app/build.gradle
+grep -q 'versionName "1.0.9"' android/app/build.gradle
 sed -i 's#</manifest>#<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/><uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/></manifest>#' android/app/src/main/AndroidManifest.xml
 grep -q 'android:icon="@mipmap/ic_launcher"' android/app/src/main/AndroidManifest.xml
 chmod +x android/gradlew

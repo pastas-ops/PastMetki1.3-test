@@ -9,7 +9,7 @@ const seed=(a)=>{const now=Date.now();
  window.__LN=[];window.__SYNC=[];
  window.__FB={user:{uid:'u1',email:'x'},db:{
   'profiles/u1':{name:'Алексей',login:'alex',av:'',inv:'ABC123'},'profiles/u2':{name:'Аня',login:'anya',av:'',inv:'ZZZ'},'profiles/u3':{name:'Борис',login:'boris',av:'',inv:'YYY'},
-  'users/u1':{s:{a:'g',tm:1,th:'dark',nf:1,tz:'Europe/Moscow'},rd:{},sq:[],hist:[],notes:a.notes},
+  'users/u1':{s:{a:'g',tm:1,th:'dark',nf:1,tz:'Europe/Moscow',lv:'1.0.9'},rd:{},sq:[],hist:[],notes:a.notes},
   'chats/u1|u2':{members:['u1','u2'],on:true,last:{x:'Привет',ts:now-1000,f:'u2'}},
   'chats/u1|u3':{members:['u1','u3'],on:true,last:null},
   'chats/u1|u2/msgs/m0':{f:'u2',x:'Давно',k:[],dn:false,ts:now-3*864e5,due:''},
@@ -24,7 +24,7 @@ const seed=(a)=>{const now=Date.now();
 };
 async function mk(browser,o){const ctx=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});const p=await ctx.newPage();const e=[];
  p.on('pageerror',x=>e.push('pageerror: '+x.message));p.on('console',m=>{if(m.type()==='error')e.push('console: '+m.text())});
- await p.route('**/*',r=>{const u=r.request().url();if(/manifest\.webmanifest|sw\.js|icon-\d+\.png/.test(u))return r.fulfill({status:200,contentType:'text/plain',body:''});if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});if(u.includes('fonts.googleapis'))return r.fulfill({contentType:'text/css',body:''});if(u==='http://pm.test/')return r.fulfill({contentType:'text/html',body:html});return r.abort()});
+ await p.route('**/*',r=>{const u=r.request().url();if(u.includes('pastmetki.web.app/version.json'))return r.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:'{"version":"1.0.9","min":"1.0.0"}'});if(/manifest\.webmanifest|sw\.js|icon-\d+\.png/.test(u))return r.fulfill({status:200,contentType:'text/plain',body:''});if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});if(u.includes('fonts.googleapis'))return r.fulfill({contentType:'text/css',body:''});if(u==='http://pm.test/')return r.fulfill({contentType:'text/html',body:html});return r.abort()});
  await p.addInitScript(seed,o);await p.goto('http://pm.test/');await p.waitForTimeout(800);return{p,e}}
 const N=(id,title,o={})=>({id,title,tasks:[],done:false,due:'',cat:'work',body:'',...o});
 (async()=>{
@@ -37,9 +37,9 @@ const N=(id,title,o={})=>({id,title,tasks:[],done:false,due:'',cat:'work',body:'
   ok('home: shared note due today shown in "Сегодня"',t.includes('Общая сегодня'));
   ok('home: shared note shown in upcoming',t.includes('Общая потом'));
   ok('home: percent includes shared (2 of 3 = 67%)',t.includes('67%')&&t.includes('2 из 3'),t.slice(0,160));
-  ok('home: edit pencil on own notes only',(await p.$$('.trow [data-a=hed]')).length===2&&await p.$('.tw:has-text("Общая сегодня") [data-a=hed]')===null);
-  await p.click('.tw:has-text("Будущая") [data-a=hed]');await p.waitForTimeout(400);
-  ok('home: edit dialog opens from home',await p.$('dialog[open] #et')!==null||await p.$('dialog[open] input')!==null);
+  ok('home: no pencil button, arrow is the last control in the row',await p.$('.trow [data-a=hed]')===null);
+  await p.click('.tw:has-text("Будущая") .trow',{delay:800});await p.waitForTimeout(900);
+  ok('home: edit dialog opens on long press',await p.$('dialog[open] #et')!==null||await p.$('dialog[open] input')!==null);
   await p.fill('dialog[open] input >> nth=0','Будущая (изм.)');await p.click('dialog [data-a=esv]');await p.waitForTimeout(500);
   ok('home: edit saved',(await p.evaluate(()=>window.__FB.db['users/u1'].notes.find(n=>n.id===2).title))==='Будущая (изм.)'&&(await txt()).includes('Будущая (изм.)'));
   // complete the shared one -> all done -> green check
@@ -84,7 +84,7 @@ const N=(id,title,o={})=>({id,title,tasks:[],done:false,due:'',cat:'work',body:'
   // widget diagnostics button + sync
   ok('background sync registered with token',await p.evaluate(()=>window.__SYNC.some(x=>x.uid==='u1'&&x.rt==='rt123'&&x.on===true&&x.key==='test-key')),JSON.stringify(await p.evaluate(()=>window.__SYNC)));
   await p.click('[data-a=wdg]');await p.waitForTimeout(1800);
-  ok('widget check button reports numbers',(await p.innerText('body')).includes('Виджетов на экране: 2'));
+  ok('widget check button reports numbers',(await p.innerText('body')).includes('виджетов на экране: 2'));
   ok('no JS errors (notifications)',e.length===0,e.join(' | '));await p.close()}
  // ============ 3. stats ============
  {const notes=[N(1,'Просроченная',{due:add(-2),tasks:[{text:'a',done:false},{text:'b',done:false}]}),N(2,'Обычная',{due:add(4)}),N(3,'Без даты')];

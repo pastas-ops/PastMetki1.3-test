@@ -8,10 +8,10 @@ const results=[];const ok=(n,c,extra='')=>{results.push([c?'PASS':'FAIL',n,extra
 const seed=(a)=>{const now=Date.now(),D=864e5;
  window.__FB={user:{uid:a.uid,email:'x'},db:{
   'profiles/u1':{name:'Алексей',login:'alex',av:'',inv:'ABC123'},'profiles/u2':{name:'Аня',login:'anya',av:'',inv:'ZZZ'},'profiles/u3':{name:'Борис',login:'boris',av:'',inv:'YYY'},
-  'users/u1':{s:{a:'g',tm:1,th:'dark',nf:1,tz:'Europe/Moscow'},rd:{},sq:[],hist:[],notes:[
+  'users/u1':{s:{a:'g',tm:1,th:'dark',nf:1,tz:'Europe/Moscow',lv:'1.0.9'},rd:{},sq:[],hist:[],notes:[
     {id:now-5000,title:'План с пунктами',tasks:[{text:'Первый',done:true},{text:'Второй',done:false}],done:false,due:a.today,dtm:'',cat:'work',body:''},
     {id:now-4000,title:'Будущая',tasks:[],done:false,due:a.d3,cat:'work',body:''}]},
-  'users/u2':{s:{a:'g',tm:1,th:'dark',nf:1,tz:'Europe/Moscow'},rd:{},sq:[],hist:[],notes:[]},
+  'users/u2':{s:{a:'g',tm:1,th:'dark',nf:1,tz:'Europe/Moscow',lv:'1.0.9'},rd:{},sq:[],hist:[],notes:[]},
   'chats/u1|u2':{members:['u1','u2'],on:true,last:{x:'Привет',ts:now,f:'u2'}},
   'chats/u1|u3':{members:['u1','u3'],on:true,last:null},
   'chats/u1|u2/msgs/m0':{f:'u2',x:'Давно',k:[],dn:false,ts:now-3*D,due:''},
@@ -23,7 +23,7 @@ const seed=(a)=>{const now=Date.now(),D=864e5;
 };
 async function mk(browser,o={}){const ctx=await browser.newContext({viewport:o.vp||{width:390,height:844},hasTouch:!o.desk});const p=await ctx.newPage();const e=[];
  p.on('pageerror',x=>e.push('pageerror: '+x.message));p.on('console',m=>{if(m.type()==='error')e.push('console: '+m.text())});
- await p.route('**/*',r=>{const u=r.request().url();if(/manifest\.webmanifest|sw\.js|icon-\d+\.png/.test(u))return r.fulfill({status:200,contentType:'text/plain',body:''});if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});if(u.includes('fonts.googleapis'))return r.fulfill({contentType:'text/css',body:''});if(u==='http://pm.test/')return r.fulfill({contentType:'text/html',body:html});return r.abort()});
+ await p.route('**/*',r=>{const u=r.request().url();if(u.includes('pastmetki.web.app/version.json'))return r.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:'{"version":"1.0.9","min":"1.0.0"}'});if(/manifest\.webmanifest|sw\.js|icon-\d+\.png/.test(u))return r.fulfill({status:200,contentType:'text/plain',body:''});if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});if(u.includes('fonts.googleapis'))return r.fulfill({contentType:'text/css',body:''});if(u==='http://pm.test/')return r.fulfill({contentType:'text/html',body:html});return r.abort()});
  await p.addInitScript(seed,{uid:o.uid||'u1',today:add(0),d3:add(3),groups:o.groups||{}});await p.goto('http://pm.test/');await p.waitForTimeout(700);return{p,e}}
 const G={ // группа u2 (создатель), u1 приглашён
  'groups/g1':{name:'Клуб',av:'',owner:'u2',members:['u2'],muted:[],ts:1,last:null},

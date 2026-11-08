@@ -9,7 +9,7 @@ async function open(browser,seed){
   const page=await ctx.newPage();const errs=[];
   page.on('pageerror',e=>errs.push('pageerror: '+e.message));
   page.on('console',m=>{if(m.type()==='error')errs.push('console: '+m.text())});
-  await page.route('**/*',r=>{const u=r.request().url();if(/manifest\.webmanifest|sw\.js|icon-\d+\.png/.test(u))return r.fulfill({status:200,contentType:'text/plain',body:''});
+  await page.route('**/*',r=>{const u=r.request().url();if(u.includes('pastmetki.web.app/version.json'))return r.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:'{"version":"1.0.9","min":"1.0.0"}'});if(/manifest\.webmanifest|sw\.js|icon-\d+\.png/.test(u))return r.fulfill({status:200,contentType:'text/plain',body:''});
     if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});
     if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});
     if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});
@@ -42,7 +42,7 @@ async function open(browser,seed){
    window.__FB={user:{uid:'u1',email:'x'},db:{
     'profiles/u1':{name:'Алексей',login:'alex',av:'',inv:'ABC123'},
     'profiles/u2':{name:'Аня',login:'anya',av:'',inv:'ZZZ'},
-    'users/u1':{s:{a:'g',tm:1,th:'dark',nf:1,tz:'Europe/Moscow'},rd:{},sq:[],hist:[{title:'Старое',tasks:['a','b']}],notes:[
+    'users/u1':{s:{a:'g',tm:1,th:'dark',nf:1,tz:'Europe/Moscow',lv:'1.0.9'},rd:{},sq:[],hist:[{title:'Старое',tasks:['a','b']}],notes:[
       {id:now-5000,title:'Подготовить презентацию',tasks:[{text:'Слайды',done:true}],done:true,due:today,cat:'work',body:'Квартальный отчёт для команды'},
       {id:now-4000,title:'Встреча с командой',tasks:[],done:false,due:today,cat:'work',body:''},
       {id:now-3000,title:'Купить продукты',tasks:[{text:'Молоко',done:false},{text:'Хлеб',done:false}],done:false,due:d1,cat:'shop',body:''},
@@ -56,7 +56,7 @@ async function open(browser,seed){
  };
  ({page,errs}=await open(browser,()=>{}));await page.close();
  const mk=async()=>{const ctx=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true});const p=await ctx.newPage();const e=[];p.on('pageerror',x=>e.push('pageerror: '+x.message));p.on('console',m=>{if(m.type()==='error')e.push('console: '+m.text())});
-  await p.route('**/*',r=>{const u=r.request().url();if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});if(u.includes('fonts.googleapis'))return r.fulfill({contentType:'text/css',body:''});if(u==='http://pm.test/')return r.fulfill({contentType:'text/html',body:html});return r.abort()});
+  await p.route('**/*',r=>{const u=r.request().url();if(u.includes('pastmetki.web.app/version.json'))return r.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:'{"version":"1.0.9","min":"1.0.0"}'});if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});if(u.includes('fonts.googleapis'))return r.fulfill({contentType:'text/css',body:''});if(u==='http://pm.test/')return r.fulfill({contentType:'text/html',body:html});return r.abort()});
   await p.addInitScript(seed,{today:add(0),d1:add(1),d3:add(3),dm:add(-2)});await p.goto('http://pm.test/');await p.waitForTimeout(600);return{p,e}};
  let {p,e}=await mk();page=p;errs=e;
  const txt=async()=>page.innerText('body');
@@ -132,7 +132,7 @@ async function open(browser,seed){
  await page.click('[data-a=back]');await page.waitForTimeout(500);ok('chat back',await page.$('nav')!==null);
  // ---- profile
  await page.click('nav [data-i=u]');await page.waitForTimeout(500);t=await txt();
- ok('profile: cells',['Настройки','История заметок','Друзья','Безопасность','Выход','Version 1.0.8'].every(x=>t.includes(x)),t.replace(/\n+/g,' | ').slice(0,300));
+ ok('profile: cells',['Настройки','История заметок','Друзья','Безопасность','Выход','Version 1.0.9'].every(x=>t.includes(x)),t.replace(/\n+/g,' | ').slice(0,300));
  await page.screenshot({path:'s9_profile.png'});
  for(const k of ['set','hist','fr','sec']){await page.click(`[data-a=acs][data-i=${k}]`);await page.waitForTimeout(450);ok('profile sub-screen '+k+' (nav hidden)',await page.$('nav')===null);await page.click('[data-a=acb]');await page.waitForTimeout(450);}
  // history -> create

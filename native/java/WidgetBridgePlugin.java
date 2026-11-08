@@ -1,9 +1,12 @@
 package com.pastmetki.app;
 
+import android.app.DownloadManager;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Environment;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -54,6 +57,27 @@ public class WidgetBridgePlugin extends Plugin {
             } catch (Exception x) { }
         }
         call.resolve();
+    }
+
+    // Загрузка файла обновления (APK) через системный менеджер загрузок; по завершении нажмите на уведомление.
+    @PluginMethod
+    public void download(PluginCall call) {
+        try {
+            String url = call.getString("url", "");
+            String name = call.getString("name", "PastMetki.apk");
+            if (url == null || url.length() == 0) { call.reject("нет ссылки"); return; }
+            DownloadManager.Request r = new DownloadManager.Request(Uri.parse(url));
+            r.setTitle("PastMetki: обновление");
+            r.setDescription(name);
+            r.setMimeType("application/vnd.android.package-archive");
+            r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name);
+            DownloadManager dm = (DownloadManager) getContext().getSystemService(Context.DOWNLOAD_SERVICE);
+            dm.enqueue(r);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject(String.valueOf(e.getMessage()));
+        }
     }
 
     // Проверка: сколько виджетов на экране и сколько заметок передано виджетам.

@@ -10,7 +10,7 @@ const seed=(a)=>{const now=Date.now(),D=864e5;
   'profiles/u1':{name:'Алексей',login:'alex',av:'',inv:'ABC123'},
   'profiles/u2':{name:'Аня',login:'anya',av:'',inv:'ZZZ'},
   'profiles/u3':{name:'Борис',login:'boris',av:'',inv:'YYY'},
-  'users/u1':{s:{a:'g',tm:1,th:'dark',nf:1,tz:'Europe/Moscow'},rd:{},sq:[],hist:[],notes:[
+  'users/u1':{s:{a:'g',tm:1,th:'dark',nf:1,tz:'Europe/Moscow',lv:'1.0.9'},rd:{},sq:[],hist:[],notes:[
     {id:now-5000,title:'Бета',tasks:[{text:'a',done:true},{text:'b',done:false},{text:'c',done:false},{text:'d',done:false}],done:false,due:a.today,dtm:'18:30',cat:'work',body:''},
     {id:now-4000,title:'Альфа',tasks:[],done:false,due:a.d3,cat:'work',body:''},
     {id:now-3000,title:'Яблоко',tasks:[],done:false,due:'',cat:'shop',body:''},
@@ -26,7 +26,7 @@ const seed=(a)=>{const now=Date.now(),D=864e5;
 };
 async function mk(browser){const ctx=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true});const p=await ctx.newPage();const e=[];
  p.on('pageerror',x=>e.push('pageerror: '+x.message));p.on('console',m=>{if(m.type()==='error')e.push('console: '+m.text())});
- await p.route('**/*',r=>{const u=r.request().url();if(/manifest\.webmanifest|sw\.js|icon-\d+\.png/.test(u))return r.fulfill({status:200,contentType:'text/plain',body:''});if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});if(u.includes('fonts.googleapis'))return r.fulfill({contentType:'text/css',body:''});if(u==='http://pm.test/')return r.fulfill({contentType:'text/html',body:html});return r.abort()});
+ await p.route('**/*',r=>{const u=r.request().url();if(u.includes('pastmetki.web.app/version.json'))return r.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:'{"version":"1.0.9","min":"1.0.0"}'});if(/manifest\.webmanifest|sw\.js|icon-\d+\.png/.test(u))return r.fulfill({status:200,contentType:'text/plain',body:''});if(u.includes('firebase-app.js'))return r.fulfill({contentType:'text/javascript',body:M.app});if(u.includes('firebase-auth.js'))return r.fulfill({contentType:'text/javascript',body:M.auth});if(u.includes('firebase-firestore.js'))return r.fulfill({contentType:'text/javascript',body:M.fs});if(u.includes('fonts.googleapis'))return r.fulfill({contentType:'text/css',body:''});if(u==='http://pm.test/')return r.fulfill({contentType:'text/html',body:html});return r.abort()});
  await p.addInitScript(seed,{today:add(0),d3:add(3),dm:add(-2)});await p.goto('http://pm.test/');await p.waitForTimeout(600);return{p,e,ctx}}
 (async()=>{
  const browser=await chromium.launch();const {p:page,e:errs}=await mk(browser);

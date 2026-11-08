@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.RemoteViews;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -16,14 +18,76 @@ public class PmData {
         return c.getSharedPreferences("pm_widget", Context.MODE_PRIVATE);
     }
 
+    // Файл, в который пишет официальный плагин @capacitor/preferences (ключи pm_chats, pm_notes, pm_dls, pm_prog, pm_ops, pm_sy).
+    static SharedPreferences cs(Context c) {
+        return c.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
+    }
+
+    private static SharedPreferences.OnSharedPreferenceChangeListener L;
+    private static Context app;
+    private static final Handler H = new Handler(Looper.getMainLooper());
+    private static final Runnable RF = new Runnable() {
+        @Override public void run() { if (app != null) refresh(app); }
+    };
+
+    // Следим за данными, которые приложение положило для виджетов: как только они поменялись, виджеты обновляются.
+    static void watch(Context c) {
+        app = c.getApplicationContext();
+        if (L != null) return;
+        L = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override public void onSharedPreferenceChanged(SharedPreferences p, String key) {
+                if (key == null) return;
+                if (key.equals("pm_sy")) { applySync(app); return; }
+                if (key.equals("pm_chats") || key.equals("pm_notes") || key.equals("pm_dls") || key.equals("pm_prog")) {
+                    H.removeCallbacks(RF);
+                    H.postDelayed(RF, 350);
+                }
+            }
+        };
+        cs(app).registerOnSharedPreferenceChangeListener(L);
+        applySync(app);
+        refresh(app);
+    }
+
+    // Данные для фоновой проверки сообщений (ключ pm_sy = {uid, rt, on, key}).
+    static void applySync(Context c) {
+        try {
+            String raw = cs(c).getString("pm_sy", null);
+            if (raw == null) return;
+            JSONObject o = new JSONObject(raw);
+            String uid = o.optString("uid", "");
+            String rt = o.optString("rt", "");
+            String key = o.optString("key", "");
+            boolean on = o.optBoolean("on", true);
+            SharedPreferences p = sp(c);
+            SharedPreferences.Editor e = p.edit();
+            if (uid.length() == 0 || rt.length() == 0) {
+                e.remove("sy_uid").remove("sy_rt").remove("sy_seen").apply();
+                MsgJobService.cancel(c);
+                return;
+            }
+            String old = p.getString("sy_uid", "");
+            e.putString("sy_uid", uid).putString("sy_rt", rt).putString("sy_key", key).putBoolean("sy_on", on);
+            if (!uid.equals(old)) e.remove("sy_seen");
+            e.apply();
+            if (on) MsgJobService.schedule(c); else MsgJobService.cancel(c);
+        } catch (Exception ex) {
+            // игнорируем
+        }
+    }
+
     // Кэш для виджетов: приложение (WebView) кладёт сюда снимок данных из Firestore.
     static void save(Context c, String chats, String notes, String dls, String prog) {
         sp(c).edit().putString("chats", chats).putString("notes", notes).putString("dls", dls).putString("prog", prog).putLong("ts", System.currentTimeMillis()).apply();
+        cs(c).edit().putString("pm_chats", chats).putString("pm_notes", notes).putString("pm_dls", dls).putString("pm_prog", prog).apply();
         refresh(c);
     }
 
     static String get(Context c, String k) {
-        return sp(c).getString(k, "prog".equals(k) ? "{}" : "[]");
+        String v = cs(c).getString("pm_" + k, null);
+        if (v == null) v = sp(c).getString(k, null);
+        if (v == null) v = "prog".equals(k) ? "{}" : "[]";
+        return v;
     }
 
     static JSONObject prog(Context c) {
@@ -98,7 +162,7 @@ public class PmData {
                     o.put("d", now ? 1 : 0);
                 }
             }
-            JSONArray ops = new JSONArray(sp(c).getString("ops", "[]"));
+            JSONArray ops = new JSONArray(cs(c).getString("pm_ops", "[]"));
             JSONArray out = new JSONArray();
             for (int i = 0; i < ops.length(); i++) {
                 JSONObject o = ops.getJSONObject(i);
@@ -108,7 +172,8 @@ public class PmData {
             op.put("id", Long.parseLong(id));
             op.put("done", now);
             out.put(op);
-            sp(c).edit().putString("notes", a.toString()).putString("ops", out.toString()).apply();
+            cs(c).edit().putString("pm_notes", a.toString()).putString("pm_ops", out.toString()).apply();
+            sp(c).edit().putString("notes", a.toString()).apply();
             refresh(c);
         } catch (Exception e) {
             // игнорируем: виджет просто не изменится
@@ -116,8 +181,8 @@ public class PmData {
     }
 
     static String takeOps(Context c) {
-        String s = sp(c).getString("ops", "[]");
-        sp(c).edit().putString("ops", "[]").apply();
+        String s = cs(c).getString("pm_ops", "[]");
+        cs(c).edit().putString("pm_ops", "[]").apply();
         return s;
     }
 }
