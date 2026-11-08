@@ -1,6 +1,6 @@
 {
   "name": "pastmetki",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": true,
   "dependencies": {
     "@capacitor/android": "6.1.2",

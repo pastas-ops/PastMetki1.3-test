@@ -11,6 +11,7 @@ const emit=()=>st.ls.forEach(l=>l());
 export const onSnapshot=(r,cb)=>{const f=()=>{if(r.doc){const v=st.db[r.path];cb({metadata:{hasPendingWrites:false},exists:()=>v!==undefined,data:()=>v})}else{const q=r.col&&r.cons?r:{col:r,cons:[]};const d=run(q);cb({metadata:{hasPendingWrites:false},docs:d,empty:!d.length,forEach:fn=>d.forEach(fn)})}};st.ls.push(f);setTimeout(f,0);return()=>{st.ls=st.ls.filter(x=>x!==f)}};
 export const getDoc=async r=>{const v=st.db[r.path];return{exists:()=>v!==undefined,data:()=>v,id:r.id}};
 export const getDocs=async q=>{const d=run(q.cons?q:{col:q,cons:[]});return{docs:d,empty:!d.length,forEach:f=>d.forEach(f)}};
+export const getCountFromServer=async q=>{const d=run(q.cons?q:{col:q,cons:[]});const w=(q.cons||[]).find(c=>c.w&&c.w[1]==='>=');const n=d.filter(x=>!w||(x.data()[w.w[0]]||0)>=w.w[2]).length;return{data:()=>({count:n})}};
 export const setDoc=async(r,v,o)=>{st.db[r.path]=o&&o.merge?{...(st.db[r.path]||{}),...v}:v;emit()};
 export const arrayUnion=(...v)=>({__au:v});
 export const updateDoc=async(r,v)=>{const o={...(st.db[r.path]||{})};for(const k in v){const x=v[k];if(x&&x.__au)o[k]=[...new Set([...(o[k]||[]),...x.__au])];else o[k]=x}st.db[r.path]=o;emit()};

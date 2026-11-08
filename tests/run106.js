@@ -32,7 +32,7 @@ async function mk(browser){const ctx=await browser.newContext({viewport:{width:3
  const browser=await chromium.launch();const {p:page,e:errs}=await mk(browser);
  const txt=()=>page.innerText('body'),db=(k)=>page.evaluate(k=>window.__FB.db[k],k);
  // ---- HOME: percent by plan items, customization
- let t=await txt();
+ await page.waitForTimeout(1300);let t=await txt();
  ok('home: percent counts plan items (1 of 4 = 25%)',t.includes('25%')&&t.includes('1 из 4'),t.slice(0,200));
  await page.click('[data-a=hmc]');await page.waitForTimeout(250);
  ok('home: customize dialog opens',await page.$('dialog[open] [data-a=hmt]')!==null);

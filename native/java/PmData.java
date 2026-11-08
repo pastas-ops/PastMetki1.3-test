@@ -18,7 +18,7 @@ public class PmData {
 
     // Кэш для виджетов: приложение (WebView) кладёт сюда снимок данных из Firestore.
     static void save(Context c, String chats, String notes, String dls, String prog) {
-        sp(c).edit().putString("chats", chats).putString("notes", notes).putString("dls", dls).putString("prog", prog).apply();
+        sp(c).edit().putString("chats", chats).putString("notes", notes).putString("dls", dls).putString("prog", prog).putLong("ts", System.currentTimeMillis()).apply();
         refresh(c);
     }
 

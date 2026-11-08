@@ -22,7 +22,7 @@ public class DeadlinesService extends RemoteViewsService {
 
         Factory(Context c) { this.c = c; }
 
-        @Override public void onCreate() {}
+        @Override public void onCreate() { onDataSetChanged(); }
 
         @Override public void onDataSetChanged() {
             try { a = new JSONArray(PmData.get(c, "dls")); } catch (Exception e) { a = new JSONArray(); }

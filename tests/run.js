@@ -60,7 +60,7 @@ async function open(browser,seed){
   await p.addInitScript(seed,{today:add(0),d1:add(1),d3:add(3),dm:add(-2)});await p.goto('http://pm.test/');await p.waitForTimeout(600);return{p,e}};
  let {p,e}=await mk();page=p;errs=e;
  const txt=async()=>page.innerText('body');
- t=await txt();
+ await page.waitForTimeout(1300);t=await txt();
  ok('home: greeting',t.includes('Привет, Алексей'));
  ok('home: progress card',/1 из 2/.test(t)&&t.includes('50%')&&t.includes('задач выполнено'));
  ok('home: sections',t.includes('Сегодня')&&t.includes('Предстоящие задачи')&&t.includes('Быстрые действия'));
@@ -132,7 +132,7 @@ async function open(browser,seed){
  await page.click('[data-a=back]');await page.waitForTimeout(500);ok('chat back',await page.$('nav')!==null);
  // ---- profile
  await page.click('nav [data-i=u]');await page.waitForTimeout(500);t=await txt();
- ok('profile: cells',['Настройки','История заметок','Друзья','Безопасность','Выход','Version 1.0.7'].every(x=>t.includes(x)),t.replace(/\n+/g,' | ').slice(0,300));
+ ok('profile: cells',['Настройки','История заметок','Друзья','Безопасность','Выход','Version 1.0.8'].every(x=>t.includes(x)),t.replace(/\n+/g,' | ').slice(0,300));
  await page.screenshot({path:'s9_profile.png'});
  for(const k of ['set','hist','fr','sec']){await page.click(`[data-a=acs][data-i=${k}]`);await page.waitForTimeout(450);ok('profile sub-screen '+k+' (nav hidden)',await page.$('nav')===null);await page.click('[data-a=acb]');await page.waitForTimeout(450);}
  // history -> create

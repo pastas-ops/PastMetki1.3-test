@@ -2,6 +2,7 @@ package com.pastmetki.app;
 
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProvider;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -126,6 +127,14 @@ public class WidgetConfigActivity extends Activity {
         setResult(RESULT_OK, r);
         AppWidgetProviderInfo info = AppWidgetManager.getInstance(this).getAppWidgetInfo(wid);
         if (info != null) {
+            try {
+                Object o = Class.forName(info.provider.getClassName()).getDeclaredConstructor().newInstance();
+                if (o instanceof AppWidgetProvider) {
+                    ((AppWidgetProvider) o).onUpdate(this, AppWidgetManager.getInstance(this), new int[] { wid });
+                }
+            } catch (Throwable t) {
+                // запасной путь: обычное широковещательное обновление
+            }
             Intent u = new Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
             u.setComponent(info.provider);
             u.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, new int[] { wid });

@@ -8,7 +8,7 @@ AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
 "$AAPT" dump badging "$APK" | grep -q "application-icon" || { echo "::error::нет иконки приложения в APK"; exit 1; }
 unzip -l "$APK" | grep -q "ic_launcher" || { echo "::error::нет ресурсов ic_launcher в APK"; exit 1; }
 "$AAPT" dump xmltree --file AndroidManifest.xml "$APK" > /tmp/manifest.txt
-for w in ChatsWidget NotesWidget Notes2Widget Notes4Widget DeadlineWidget QuickWidget Quick2Widget PlusWidget ProgressWidget TodayWidget ChatsService NotesService DeadlinesService ToggleActivity WidgetConfigActivity appwidget.provider POST_NOTIFICATIONS SCHEDULE_EXACT_ALARM RECEIVE_BOOT_COMPLETED; do
+for w in ChatsWidget NotesWidget Notes2Widget Notes4Widget DeadlineWidget QuickWidget Quick2Widget PlusWidget ProgressWidget TodayWidget ChatsService NotesService DeadlinesService ToggleActivity WidgetConfigActivity MsgJobService BIND_JOB_SERVICE appwidget.provider POST_NOTIFICATIONS SCHEDULE_EXACT_ALARM RECEIVE_BOOT_COMPLETED; do
   grep -q "$w" /tmp/manifest.txt || { echo "::error::в манифесте APK нет $w"; exit 1; }
 done
 echo "APK проверен: иконка, версия, 10 виджетов, настройка фона, разрешения"
